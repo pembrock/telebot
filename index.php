@@ -13,7 +13,11 @@ $bot->command('start', function ($message) use ($bot) {
 $message = mb_strtolower($body['message']['text']);
 
 if ($message == 'ping') {
-    $bot->sendMessage($body['message']['chat']['id'], '<a href="https://t.me/stop_tc3o_nagging">pong</a>', 'html', true);
+    $bot->sendMessage($body['message']['chat']['id'], "Адин\nДва", 'html', false);
+}
+
+if ($message == 'contact') {
+    $bot->sendContact($body['message']['chat']['id'], '8(977)777-66-55', 'Borak Obama');
 }
 
 $bot->run();

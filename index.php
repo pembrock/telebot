@@ -1,16 +1,11 @@
 <?php
 
 include "vendor/autoload.php";
+include "config.php";
 
-$token = "<token>";
-
-$bot = new \TelegramBot\Api\Client($token);
+$bot = new \TelegramBot\Api\Client(Config::get('token'));
 $body = json_decode($bot->getRawBody(), true);
-//ob_flush();
-//ob_start();
-//print_r($body);
-//file_put_contents('var_dump.txt', ob_get_flush());
-// команда для start
+
 $bot->command('start', function ($message) use ($bot) {
     $answer = 'Добро пожаловать!';
     $bot->sendMessage($message->getChat()->getId(), $answer);
@@ -18,15 +13,7 @@ $bot->command('start', function ($message) use ($bot) {
 $message = mb_strtolower($body['message']['text']);
 
 if ($message == 'ping') {
-    $bot->sendMessage($body['message']['chat']['id'], 'pong');
+    $bot->sendMessage($body['message']['chat']['id'], '<a href="https://t.me/stop_tc3o_nagging">pong</a>', 'html', true);
 }
-
-// команда для помощи
-//$bot->command('help', function ($message) use ($bot) {
-//    $answer = 'Что это?
-//Это мой бот, тупая ты скотина)';
-//    $bot->sendMessage($message->getChat()->getId(), $answer);
-//});
-//
 
 $bot->run();

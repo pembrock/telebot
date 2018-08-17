@@ -32,6 +32,7 @@ $message = mb_strtolower($body['message']['text']);
 
 if ($message == 'ping') {
     $bot->sendMessage($body['message']['chat']['id'], "Адин\nДва", 'html', false);
+//    $bot->sendMessage("@stop_tc3o_nagging", "test");
 }
 
 if ($message == 'contact') {

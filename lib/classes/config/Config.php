@@ -6,9 +6,11 @@
  * Time: 12:37
  */
 
+namespace Telebot\Lib\Config;
+
 class Config
 {
-    static $_path = 'conf/config.json';
+    static $_path = __DIR__ . '/../../../conf/config.json';
 
     static function get($key)
     {

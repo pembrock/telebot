@@ -6,54 +6,38 @@
  * Time: 14:38
  */
 
-namespace lib\Database;
+namespace Telebot\Lib\DB;
 
+use PDO;
+use PDOException;
+use Telebot\Lib\Config\Config;
 
 class Database
 {
-    private static $instances = [];
+    protected static $instance;
 
-    /**
-     * Конструктор Одиночки всегда должен быть скрытым, чтобы предотвратить
-     * прямые вызовы строительства оператором new.
-     */
-    protected function __construct() { }
 
-    /**
-     * Одиночки не должны быть клонируемыми.
-     */
+    protected function __construct() {}
+
     protected function __clone() { }
 
-    /**
-     * Одиночки не должны быть восстанавливаемыми из строк.
-     */
-    public function __wakeup()
-    {
-        throw new \Exception("Cannot unserialize a singleton.");
-    }
-
-    /**
-     * Статический метод, управляющий доступом к экземпляру одиночки.
-     *
-     * Эта реализация позволяет вам разделить класс Одиночки на подклассы,
-     * сохраняя повсюду только один экземпляр каждого подкласса.
-     */
-    public static function getInstance(): Singleton
-    {
-        $cls = get_called_class();
-        if (! isset(self::$instances[$cls])) {
-            self::$instances[$cls] = new static;
+    public static function getInstance() {
+        if(empty(self::$instance)) {
+            $db_info = array(
+                "db_host" => Config::get('db_host'),
+                "db_user" => Config::get('db_user'),
+                "db_pass" => Config::get('db_pass'),
+                "db_name" => Config::get('db_name'),
+                "db_charset" => "UTF-8");
+            try {
+                self::$instance = new PDO("mysql:host=".$db_info['db_host'].';dbname='.$db_info['db_name'], $db_info['db_user'], $db_info['db_pass']);
+                self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+                self::$instance->query('SET NAMES utf8');
+                self::$instance->query('SET CHARACTER SET utf8');
+            } catch(PDOException $error) {
+                echo $error->getMessage();
+            }
         }
-
-        return self::$instances[$cls];
-    }
-
-    /**
-     * Наконец, любой одиночка должен содержать некоторую бизнес-логику, которая
-     * может быть выполнена на его экземпляре.
-     */
-    public function someBusinessLogic()
-    {
-        // ...
+        return self::$instance;
     }
 }

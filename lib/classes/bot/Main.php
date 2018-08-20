@@ -71,10 +71,78 @@ class Main
             $bot->sendMessage($body['message']['chat']['id'], 'Удален пользователь: ' . $user);
         }
 
-//        ob_flush();
-//        ob_start();
-//        print_r($body);
-//        file_put_contents('var_dump.txt', ob_get_flush());
+        ob_flush();
+        ob_start();
+        print_r($body);
+        file_put_contents('var_dump.txt', ob_get_flush());
+
+        /**
+         * [reply_to_message] => Array
+            (
+                [message_id] => 835
+                [from] => Array
+                (
+                    [id] => 142413225
+                    [is_bot] =>
+                    [first_name] => pembrock
+                    [username] => pembrock
+                    [language_code] => ru
+                )
+
+                [chat] => Array
+                (
+                    [id] => -1001334371435
+                    [title] => Разработка межгалактического рпг ртс шутера
+                    [type] => supergroup
+                )
+
+                [date] => 1534773791
+                [text] => напиши че нить
+            )
+         */
+
+        /**
+         * [reply_to_message] => Array
+            (
+                [message_id] => 763
+                [from] => Array
+                (
+                    [id] => 142413225
+                    [is_bot] =>
+                    [first_name] => pembrock
+                    [username] => pembrock
+                    [language_code] => ru
+                )
+
+                [chat] => Array
+                (
+                    [id] => -1001334371435
+                    [title] => Разработка межгалактического рпг ртс шутера
+                    [type] => supergroup
+                )
+
+                [date] => 1534768305
+                [photo] => Array
+                (
+                    [0] => Array
+                    (
+                        [file_id] => AgADAgADkKkxG9BwoUvplXGlGyhEqsOxqw4ABBCbK_dONsT7VrMEAAEC
+                        [file_size] => 1818
+                        [width] => 84
+                        [height] => 90
+                    )
+
+                    [1] => Array
+                    (
+                        [file_id] => AgADAgADkKkxG9BwoUvplXGlGyhEqsOxqw4ABEkWkpKocpUgV7MEAAEC
+                        [file_size] => 14323
+                        [width] => 252
+                        [height] => 270
+                    )
+
+                )
+            )
+         */
 
         $message = mb_strtolower($body['message']['text']);
 
@@ -98,6 +166,10 @@ class Main
 
         if ($message == 'сука') {
             $bot->sendMessage($body['message']['chat']['id'], 'Запрягай коней!');
+        }
+
+        if ($message == 'test') {
+            $bot->sendPhoto($body['message']['chat']['id'], 'AgADAgADkKkxG9BwoUvplXGlGyhEqsOxqw4ABBCbK_dONsT7VrMEAAEC');
         }
         //$update = $bot->getUpdates();
         //ob_flush();

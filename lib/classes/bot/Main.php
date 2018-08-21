@@ -67,8 +67,8 @@ class Main
         //добавлен новый юзер
         if (isset($body['message']['new_chat_member'])) {
             $this->userJoin($body['message']['new_chat_member']['id'], $body['message']['chat']['id'], $body['message']['new_chat_member']['username']);
-            $user = "@" . $body['message']['new_chat_member']['username'];
-            $bot->sendMessage($body['message']['chat']['id'], 'Посмотрите, кто соизволил явиться. Приветик, ' . $user);
+//            $user = "@" . $body['message']['new_chat_member']['username'];
+//            $bot->sendMessage($body['message']['chat']['id'], 'Посмотрите, кто соизволил явиться. Приветик, ' . $user);
         }
 
         //удален юзер
@@ -227,7 +227,7 @@ class Main
         $text = "<b>Список админов:</b>\n\n";
         $index = 1;
         foreach ($admins as  $admin) {
-            $text .= "{$index}. @{$admin}\n";
+            $text .= "{$index}. {$admin}\n";
             $index++;
         }
 
@@ -348,7 +348,7 @@ class Main
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
             $index = 1;
             foreach ($rows as  $row) {
-                $text .= "{$index}. @{$row['username']} - {$row['last_update']}\n";
+                $text .= "{$index}. {$row['username']} - {$row['last_update']}\n";
                 $index++;
             }
         } else {
@@ -374,7 +374,7 @@ class Main
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
             $index = 1;
             foreach ($rows as  $row) {
-                $text .= "{$index}. @{$row['username']} - {$row['last_update']}\n";
+                $text .= "{$index}. {$row['username']} - {$row['last_update']}\n";
                 $index++;
             }
         } else {
@@ -435,7 +435,7 @@ class Main
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
             $index = 1;
             foreach ($rows as  $row) {
-                $text .= "{$index}. @{$row['username']} ({$row['counter']})\n";
+                $text .= "{$index}. {$row['username']} ({$row['counter']})\n";
                 $index++;
             }
         } else {
@@ -452,7 +452,7 @@ class Main
      */
     public function setBind($triggerName, $replyMessage)
     {
-        
+
     }
 
     /**

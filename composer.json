@@ -1,6 +1,7 @@
 {
     "require": {
-        "telegram-bot/api": "^2.3"
+        "telegram-bot/api": "^2.3",
+        "vearutop/php-obscene-censor-rus": "^1.0"
     },
     "autoload": {
         "psr-4": {

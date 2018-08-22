@@ -72,6 +72,9 @@ class Main
         'Красавчик', 'Орёл', 'Молодец', 'Так держать', 'Топчик', 'Грацулевич', 'Умница', 'Гранч', 'Грац', 'Грач', 'Смотрю руки у тебя из правильного места', 'Ты просто космос', 'Это превосходно', 'Ор выше гор'
     ];
 
+    static protected $_thanks = ['спасибо', 'спасиба', 'спс'];
+    static protected $_thanksAnswer = ['500 рублей', 'Да уж есть за что', 'Спасибом пьян не будешь', 'Спасибо на хлеб не намажешь', 'Не за что', 'И тебе', '😘'];
+
     public function __construct()
     {
         $this->db = Database::getInstance();
@@ -222,6 +225,10 @@ class Main
 
         if ($message == 'test') {
             $bot->sendPhoto($body['message']['chat']['id'], 'AgADAgADkKkxG9BwoUvplXGlGyhEqsOxqw4ABBCbK_dONsT7VrMEAAEC');
+        }
+
+        if (in_array($message, self::$_thanks)) {
+            $bot->sendMessage($body['message']['chat']['id'], self::$_thanksAnswer[array_rand(self::$_thanksAnswer, 1)], null, false, $body['message']['message_id']);
         }
         //$update = $bot->getUpdates();
         //ob_flush();

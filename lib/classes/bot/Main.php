@@ -23,9 +23,11 @@ class Main
     protected $bot;
     protected $body;
 
+    private $congratsSticker = 'CAADAgADiQAD6st5AuZbw2Z4SeORAg';
+
     static protected $_adminStatus = ['creator', 'administrator'];
     static protected $_words = [
-        'Ты - принц, Экли, детка', 'Ты - ужас, летящий на крыльях ночи', 'Ты - чмо', 'Ты - инженер на сотню рублей', 'Ты меня бесишь', 'Ты задрот и дрищ. Ты даже кота отпиздить не сможешь', 'Ты - принцесса', 'Ты старый', 'Ты жирный', 'Ты большой молодец'
+        'Ты - принц, Экли, детка', 'Ты - ужас, летящий на крыльях ночи', 'Ты - чмо', 'Ты - инженер на сотню рублей', 'Ты меня бесишь', 'Ты задрот и дрищ. Ты даже кота отпиздить не сможешь', 'Ты - принцесса', 'Ты старый', 'Ты жирный', 'Ты большой молодец', 'Ты человек летучая мышь', 'Ты мог бы быть лучше', 'Ты остался таким же как и был', 'Кто ты?', 'Ты чудо', 'Ты восхитителен', 'Ты правый', 'Ты левый', 'Ты такой же как все', 'Ты не лишен простоты', 'Ты не смешной', 'Ты рок звезда', 'Ты такой же как Путин', 'Ты рыжая из ВИА Гры', 'Ты твинк', 'Ты самый лучший человек на Земле'
     ];
     static protected $_awesome = [
         'И ты это все сам сделал! Какой ты молодец!', 'И пенис у тебя огромный', 'Как будто были сомнения', 'Но не так круто, как крут ты', 'Тупо', 'Как задница вон той чики', 'Можно и отдохнуть', 'Это был тяжелый год...', 'True story', 'Что ты можешь знать о крутости?', 'Не то что твоя жизнь', '😉'
@@ -37,12 +39,37 @@ class Main
     static protected $_commands = [
         'кто я' => 'whoAmI',
         'кто я?' => 'whoAmI',
-        'ты кто?' => 'whoAmI',
-        'кто ты?' => 'whoAmI',
+//        'ты кто?' => 'whoAmI',
+//        'кто ты?' => 'whoAmI',
         'кто свалил' => 'whoLeft',
-        'кто явился' => 'whoJoin',
+        'кто пришел' => 'whoJoin',
+        'кто пришел?' => 'whoJoin',
+        'кто ввалил?' => 'whoJoin',
+        'кто ввалил' => 'whoJoin',
         'админы' => 'whoAdmin',
-        'бескультурщина' => 'whoTopBadWords'
+        'бескультурщина' => 'whoTopBadWords',
+        'др' => 'getNextBirthday'
+    ];
+
+    static protected  $_numberTitles = ['раз', 'раза', 'раз'];
+    static protected  $_dayNumberTitles = ['день', 'дня', 'дней'];
+    static protected $_monthTitle = [
+        1 => 'января',
+        2 => 'февраля',
+        3 => 'марта',
+        4 => 'апреля',
+        5 => 'мая',
+        6 => 'июня',
+        7 => 'июля',
+        8 => 'августа',
+        9 => 'сентября',
+        10 => 'октября',
+        11 => 'ноября',
+        12 => 'декабря',
+    ];
+
+    static protected $_congrats = [
+        'Красавчик', 'Орёл', 'Молодец', 'Так держать', 'Топчик', 'Грацулевич', 'Умница', 'Гранч', 'Грац', 'Грач', 'Смотрю руки у тебя из правильного места', 'Ты просто космос', 'Это превосходно', 'Ор выше гор'
     ];
 
     public function __construct()
@@ -56,6 +83,11 @@ class Main
     {
         $bot = $this->bot;
         $body = $this->body;
+
+        //        ob_flush();
+//        ob_start();
+//        print_r($body);
+//        file_put_contents('var_dump.txt', ob_get_flush(), FILE_APPEND);
 
         $this->checkUser($body['message']);
 
@@ -76,6 +108,10 @@ class Main
             $this->userLeft($body['message']['left_chat_member']['id'], $body['message']['chat']['id'], $body['message']['left_chat_member']['username']);
             $user = "@" . $body['message']['left_chat_member']['username'];
             $bot->sendMessage($body['message']['chat']['id'], 'Кто же нас покинул? Позор тебе, ' . $user);
+        }
+
+        if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->congratsSticker) {
+            $bot->sendMessage($body['message']['chat']['id'], self::$_congrats[array_rand(self::$_congrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
 
 //        ob_flush();
@@ -159,11 +195,12 @@ class Main
 
         if (isset(self::$_commands[$message])) {
             $text = $this->{self::$_commands[$message]}($body['message']['chat']['id']);
-            $bot->sendMessage($body['message']['chat']['id'], $text, 'html', false, $body['message']['message_id']);
+            $bot->sendMessage($body['message']['chat']['id'], $text, 'html', true, $body['message']['message_id']);
         }
 
         if ($message == 'ping') {
-            $bot->sendMessage($body['message']['chat']['id'], "pong", 'html', false, $body['message']['message_id']);
+            $bot->sendMessage($body['message']['chat']['id'], "pong", 'html', true, $body['message']['message_id']);
+//            $bot->sendMessage($body['message']['chat']['id'], "<a href='t.me/evgeniyapuplikova'>test</a>", 'html', true, $body['message']['message_id']);
 //    $bot->sendMessage("@stop_tc3o_nagging", "test");
         }
 
@@ -208,7 +245,8 @@ class Main
         foreach($administrators as $admin) {
             if (in_array($admin->getStatus(), self::$_adminStatus)) {
                 if (!$admin->getUser()->isBot()) {
-                    $admins[] = $admin->getUser()->getUsername();
+                    $admins[$admin->getUser()->getId()]['username'] = $admin->getUser()->getUsername();
+                    $admins[$admin->getUser()->getId()]['id'] = $admin->getUser()->getId();
                 }
             }
         }
@@ -227,7 +265,8 @@ class Main
         $text = "<b>Список админов:</b>\n\n";
         $index = 1;
         foreach ($admins as  $admin) {
-            $text .= "{$index}. {$admin}\n";
+            $text .= "{$index}. <a href='t.me/{$admin['username']}'>{$admin['username']}</a>\n";
+//            $text .= "{$index}. <a href='tg://user?id={$admin['id']}'>{$admin['username']}</a>\n";
             $index++;
         }
 
@@ -313,12 +352,14 @@ class Main
         $query = $this->db->prepare("SELECT * FROM charts WHERE user_id = :user_id AND chat_id = :chat_id AND action_type = :action_type");
         $query->execute(array('user_id' => $userId, 'chat_id' => $chatId, 'action_type' => 'join'));
         if( $query->rowCount() > 0 ) {
-            $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type");
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update, counter = :counter WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type");
             $statement->execute(array(
                 'chat_id' => $chatId,
                 'user_id' => $userId,
                 'action_type' => 'join',
-                'last_update' => $date->format('Y-m-d H:i:s')
+                'last_update' => $date->format('Y-m-d H:i:s'),
+                'counter' => (int)$row['counter'] + 1,
             ));
         } else {
             $statement = $this->db->prepare("INSERT INTO charts (chat_id, user_id, username, action_type, last_update) VALUES (:chat_id, :user_id, :username, :action_type, :last_update)");
@@ -327,6 +368,7 @@ class Main
                 'user_id' => $userId,
                 'username' => $username,
                 'action_type' => 'join',
+                'counter' => 1,
                 'last_update' => $date->format('Y-m-d H:i:s')
             ));
         }
@@ -366,7 +408,7 @@ class Main
     public function whoJoin($chatId)
     {
         $text = "<b>Список последних прильнувших:</b>\n\n";
-        $query = $this->db->prepare( "SELECT username, last_update
+        $query = $this->db->prepare( "SELECT username, last_update, counter
 			 FROM charts
 			 WHERE action_type = :action_type AND chat_id = :chat_id ORDER BY last_update DESC LIMIT 10" );
         $query->execute(array('action_type' => 'join', 'chat_id' => $chatId));
@@ -374,7 +416,7 @@ class Main
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
             $index = 1;
             foreach ($rows as  $row) {
-                $text .= "{$index}. {$row['username']} - {$row['last_update']}\n";
+                $text .= "{$index}. {$row['username']} ({$this->declOfNum($row['counter'], self::$_numberTitles)}) - {$row['last_update']}\n";
                 $index++;
             }
         } else {
@@ -382,6 +424,14 @@ class Main
         }
 
         return $text;
+    }
+
+
+
+    public function declOfNum($number, $titles)
+    {
+        $cases = array (2, 0, 1, 1, 1, 2);
+        return $number." ".$titles[ ($number%100 > 4 && $number %100 < 20) ? 2 : $cases[min($number%10, 5)] ];
     }
 
     /**
@@ -442,6 +492,28 @@ class Main
             $text .= "Пока все культурные.";
         }
 
+        return $text;
+    }
+
+    public function getNextBirthday($chatId)
+    {
+        $text = "<b>Ближайшие ДР:</b>\n\n";
+        $query = $this->db->prepare("select * from ( select *, datediff(DATE_FORMAT(birthday,concat('%',YEAR(CURDATE()),'-%m-%d')),NOW()) as no_of_days from users union select *, datediff(DATE_FORMAT(birthday,concat('%',(YEAR(CURDATE())+1),'-%m-%d')),NOW()) as no_of_days from users ) AS upcomingbirthday WHERE no_of_days>0 AND chat_id = :chat_id GROUP BY id ORDER BY no_of_days asc LIMIT 10");
+        $query->execute(array('chat_id' => $chatId));
+        if( $query->rowCount() > 0 ) {
+            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+            $index = 1;
+            foreach ($rows as  $row) {
+                $date = new DateTime($row['birthday']);
+                $date_str = $date->format('j') . ' ' . self::$_monthTitle[$date->format('n')];
+                $text .= "{$index}. <a href='t.me/{$row['username']}'>{$row['username']}</a> (Через {$this->declOfNum($row['no_of_days'], self::$_dayNumberTitles)}) - {$date_str}\n";
+                $index++;
+            }
+
+            $text .= "\nЕсли ты еще не скинул свой др, то скидывай сюда @NaggingFeedbackBot";
+        } else {
+            $text .= "Дни рождения - миф.";
+        }
         return $text;
     }
 

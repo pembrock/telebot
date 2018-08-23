@@ -48,7 +48,8 @@ class Main
         'кто ввалил' => 'whoJoin',
         'админы' => 'whoAdmin',
         'бескультурщина' => 'whoTopBadWords',
-        'др' => 'getNextBirthday'
+        'др' => 'getNextBirthday',
+        'топ' => 'getCarmaList'
     ];
 
     static protected  $_numberTitles = ['раз', 'раза', 'раз'];
@@ -75,6 +76,8 @@ class Main
     static protected $_thanks = ['спасибо', 'спасиба', 'спс'];
     static protected $_thanksAnswer = ['500 рублей', 'Да уж есть за что', 'Спасибом пьян не будешь', 'Спасибо на хлеб не намажешь', 'Не за что', 'И тебе', '😘'];
 
+    static protected $_carmaChange = ['+', '-'];
+
     public function __construct()
     {
         $this->db = Database::getInstance();
@@ -87,7 +90,7 @@ class Main
         $bot = $this->bot;
         $body = $this->body;
 
-        //        ob_flush();
+//        ob_flush();
 //        ob_start();
 //        print_r($body);
 //        file_put_contents('var_dump.txt', ob_get_flush(), FILE_APPEND);
@@ -102,8 +105,8 @@ class Main
         //добавлен новый юзер
         if (isset($body['message']['new_chat_member'])) {
             $this->userJoin($body['message']['new_chat_member']['id'], $body['message']['chat']['id'], $body['message']['new_chat_member']['username']);
-//            $user = "@" . $body['message']['new_chat_member']['username'];
-//            $bot->sendMessage($body['message']['chat']['id'], 'Посмотрите, кто соизволил явиться. Приветик, ' . $user);
+            $user = "@" . $body['message']['new_chat_member']['username'];
+            $bot->sendMessage($body['message']['chat']['id'], $user . ', привет. Классная ава. Пососемся?');
         }
 
         //удален юзер
@@ -207,10 +210,6 @@ class Main
 //    $bot->sendMessage("@stop_tc3o_nagging", "test");
         }
 
-//        if ($message == 'contact') {
-//            $bot->sendContact($body['message']['chat']['id'], '8(977)777-66-55', 'Borak Obama');
-//        }
-
         if (mb_strpos($message, 'отпуск') !== false) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_vacation[array_rand(self::$_vacation, 1)], null, false, $body['message']['message_id']);
         }
@@ -230,6 +229,14 @@ class Main
         if (in_array($message, self::$_thanks)) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_thanksAnswer[array_rand(self::$_thanksAnswer, 1)], null, false, $body['message']['message_id']);
         }
+
+        if (in_array($message, self::$_carmaChange) && isset($body['message']['reply_to_message'])) {
+            $toUserId = $body['message']['reply_to_message']['from']['id'];
+            $username = $body['message']['reply_to_message']['from']['username'];
+            $fromUserId = $body['message']['from']['id'];
+            $this->changeCarma($body['message']['chat']['id'], $fromUserId, $toUserId, $username, $message);
+        }
+
         //$update = $bot->getUpdates();
         //ob_flush();
         //ob_start();
@@ -434,7 +441,6 @@ class Main
     }
 
 
-
     public function declOfNum($number, $titles)
     {
         $cases = array (2, 0, 1, 1, 1, 2);
@@ -502,6 +508,11 @@ class Main
         return $text;
     }
 
+    /**
+     * Выводит список ближайших 10 дней рождений
+     * @param $chatId
+     * @return string
+     */
     public function getNextBirthday($chatId)
     {
         $text = "<b>Ближайшие ДР:</b>\n\n";
@@ -521,6 +532,71 @@ class Main
         } else {
             $text .= "Дни рождения - миф.";
         }
+        return $text;
+    }
+
+    public function changeCarma($chatId, $fromUser, $toUser, $username, $action)
+    {
+        $date = new DateTime();
+        $query = $this->db->prepare("SELECT * FROM charts WHERE user_id = :user_id AND chat_id = :chat_id AND action_type = :action_type");
+        $query->execute(array('user_id' => $toUser, 'chat_id' => $chatId, 'action_type' => 'carma'));
+        if( $query->rowCount() > 0 ) {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            if ($action == '+') {
+                $counter = $row['counter'] + 1;
+            } else {
+                $counter = $row['counter'] - 1;
+            }
+            $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update, counter = :counter WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type");
+
+            $statement->execute(array(
+                'chat_id' => $chatId,
+                'user_id' => $toUser,
+                'action_type' => 'carma',
+                'counter'   => $counter,
+                'last_update' => $date->format('Y-m-d H:i:s')
+            ));
+        } else {
+            if ($action == '+') {
+                $counter = 1;
+            } else {
+                $counter = -1;
+            }
+            $statement = $this->db->prepare("INSERT INTO charts (chat_id, user_id, username, action_type, counter, last_update) VALUES (:chat_id, :user_id, :username, :action_type, :counter, :last_update)");
+            $statement->execute(array(
+                'chat_id' => $chatId,
+                'user_id' => $toUser,
+                'username' => $username,
+                'action_type' => 'carma',
+                'counter' => $counter,
+                'last_update' => $date->format('Y-m-d H:i:s')
+            ));
+        }
+    }
+
+    /**
+     * Показывает топ по карме
+     * @param $chatId
+     * @return string
+     */
+    public function getCarmaList($chatId)
+    {
+        $text = "<b>Список кармических топов:</b>\n\n";
+        $query = $this->db->prepare( "SELECT username, counter
+			 FROM charts
+			 WHERE action_type = :action_type AND chat_id = :chat_id AND counter != 0 ORDER BY counter DESC LIMIT 10" );
+        $query->execute(array('action_type' => 'carma', 'chat_id' => $chatId));
+        if( $query->rowCount() > 0 ) {
+            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+            $index = 1;
+            foreach ($rows as  $row) {
+                $text .= "{$index}. {$row['username']} ({$row['counter']})\n";
+                $index++;
+            }
+        } else {
+            $text .= "Пока все безкарменные.";
+        }
+
         return $text;
     }
 

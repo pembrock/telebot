@@ -70,8 +70,6 @@ class Main
     static protected $_commands = [
         'кто я' => 'whoAmI',
         'кто я?' => 'whoAmI',
-//        'ты кто?' => 'whoAmI',
-//        'кто ты?' => 'whoAmI',
         'кто свалил' => 'whoLeft',
         'кто пришел' => 'whoJoin',
         'кто пришел?' => 'whoJoin',

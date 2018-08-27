@@ -14,6 +14,7 @@ use Telebot\Lib\Config\Config;
 use Telebot\Lib\DB\Database;
 use TelegramBot\Api\Client;
 use Wkhooy\ObsceneCensorRus;
+use Telebot\Lib\Bot\Horoscope;
 
 class Main extends Bot
 {
@@ -31,10 +32,28 @@ class Main extends Bot
         $this->botCreator = Config::get('bot_creator');
     }
 
+    public function test()
+    {
+        $bot = $this->bot;
+        $body = $this->body;
+        $message = mb_strtolower($body['message']['text']);
+        if ($message == 'test') {
+            $bot->sendMessage($body['message']['chat']['id'], 'test', 'html', true, $body['message']['message_id']);
+        }
+
+        $bot->run();
+    }
+
     public function index()
     {
         $bot = $this->bot;
         $body = $this->body;
+
+
+            ob_flush();
+            ob_start();
+            print_r($body);
+            file_put_contents('reply_dump_test.txt', ob_get_flush(), FILE_APPEND);
 
 //        if ($body['message']['chat']['id'] == '-1001334371435') {
 //            ob_flush();
@@ -105,6 +124,7 @@ class Main extends Bot
             }
         }
 
+        //установка триггера на фразу
         if (preg_match($this->bindPattern, $message, $mathes) && isset($body['message']['reply_to_message'])) {
 
             $administrators = $this->getAdministrators($body['message']['chat']['id']);
@@ -121,6 +141,7 @@ class Main extends Bot
             }
         }
 
+        //удаление триггера на фразу
         if (preg_match($this->unbindPattern, $message, $mathes)) {
 
             $administrators = $this->getAdministrators($body['message']['chat']['id']);
@@ -165,10 +186,6 @@ class Main extends Bot
             $bot->sendMessage($body['message']['chat']['id'], self::$_awesome[array_rand(self::$_awesome, 1)], 'html', true, $body['message']['message_id']);
         }
 
-//        if ($message == 'сука') {
-//            $bot->sendMessage($body['message']['chat']['id'], 'Запрягай коней!', null, false, $body['message']['message_id']);
-//        }
-
         if ($message == 'test') {
             $bot->sendPhoto($body['message']['chat']['id'], 'AgADAgADkKkxG9BwoUvplXGlGyhEqsOxqw4ABBCbK_dONsT7VrMEAAEC');
         }
@@ -188,6 +205,12 @@ class Main extends Bot
                     $bot->sendMessage($body['message']['chat']['id'], $carmaResult, 'html', true, $body['message']['message_id']);
                 }
             }
+        }
+
+        if (isset(self::$_horoSigns[$message])) {
+            $horoscope = new Horoscope(self::$_horoSigns[$message]);
+            $horoText = $horoscope->get();
+            $bot->sendMessage($body['message']['chat']['id'], $horoText, 'html', true, $body['message']['message_id']);
         }
 
         //$update = $bot->getUpdates();
@@ -260,7 +283,11 @@ class Main extends Bot
         $userId = $body['from']['id'];
         $username = $body['from']['username'];
         $userFirstName = $body['from']['first_name'];
-        $languageCode = $body['from']['language_code'];
+        if (isset($body['from']['language_code'])) {
+            $languageCode = $body['from']['language_code'];
+        } else {
+            $languageCode = '';
+        }
         $chatId = $body['chat']['id'];
 
         $query = $this->db->prepare( "SELECT user_id

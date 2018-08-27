@@ -69,16 +69,29 @@ class Bot
         'Мат-перемат',
         'Мат на мате и матом погоняет',
     ];
+
+    static protected $_horoSigns = [
+        'овен' => 'aries',
+        'телец' => 'taurus',
+        'близнецы' => 'gemini',
+        'рак' => 'cancer',
+        'лев' => 'leo',
+        'весы' => 'libra',
+        'скорпион' => 'scorpio',
+        'стрелец' => 'sagittarius',
+        'козерог' => 'capricorn',
+        'водолей' => 'aquarius',
+        'дева' => 'virgo',
+        'рыбы' => 'pisces'
+
+    ];
+
     static protected $_magicRandom = [3];
     static protected $_excludeTriggers = ['список триггеров'];
     static protected $_commands = [
         'кто я' => 'whoAmI',
-        'кто я?' => 'whoAmI',
         'кто свалил' => 'whoLeft',
         'кто пришел' => 'whoJoin',
-        'кто пришел?' => 'whoJoin',
-        'кто ввалил?' => 'whoJoin',
-        'кто ввалил' => 'whoJoin',
         'админы' => 'whoAdmin',
         'бескультурщина' => 'whoTopBadWords',
         'др' => 'getNextBirthday',

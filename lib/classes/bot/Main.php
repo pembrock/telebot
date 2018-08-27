@@ -50,10 +50,10 @@ class Main extends Bot
         $body = $this->body;
 
 
-            ob_flush();
-            ob_start();
-            print_r($body);
-            file_put_contents('reply_dump_test.txt', ob_get_flush(), FILE_APPEND);
+//            ob_flush();
+//            ob_start();
+//            print_r($body);
+//            file_put_contents('reply_dump_test.txt', ob_get_flush(), FILE_APPEND);
 
 //        if ($body['message']['chat']['id'] == '-1001334371435') {
 //            ob_flush();
@@ -63,6 +63,8 @@ class Main extends Bot
 //        }
 
         $this->checkUser($body['message']);
+
+//        $this->updateUserName($body['message']['chat']['id']);
 
         $bot->command('start', function ($message) use ($bot) {
             $answer = 'Добро пожаловать!';
@@ -243,6 +245,22 @@ class Main extends Bot
         return $admins;
     }
 
+//    private function updateUserName($chatId)
+//    {
+////        $usersList = $this->getUsers($chatId);
+////        $list = '';
+////        foreach ($usersList as $dbUser) {
+////            $user = $this->bot->getChatMember($chatId, $dbUser['user_id']);
+////            $list .= $dbUser['user_id'] . " " . $user->getUser()->getLastName() . "\n";
+////        }
+//
+//        $chat = $this->bot->getChat($chatId);
+//
+//
+//        file_put_contents('users.txt', $chat->getUsername());
+//
+//    }
+
     /**
      * Выводит список админов чата
      * @param $chatId
@@ -283,6 +301,10 @@ class Main extends Bot
         $userId = $body['from']['id'];
         $username = $body['from']['username'];
         $userFirstName = $body['from']['first_name'];
+        $userLasttName = '';
+        if (isset($body['from']['last_name'])) {
+            $userLasttName = $body['from']['last_name'];
+        }
         if (isset($body['from']['language_code'])) {
             $languageCode = $body['from']['language_code'];
         } else {
@@ -290,19 +312,32 @@ class Main extends Bot
         }
         $chatId = $body['chat']['id'];
 
-        $query = $this->db->prepare( "SELECT user_id
+        $query = $this->db->prepare( "SELECT id, user_id
 			 FROM users
 			 WHERE user_id = :user_id AND chat_id = :chat_id" );
         $query->execute(array('user_id' => $userId, 'chat_id' => $chatId));
         if( $query->rowCount() <= 0 ) {
-            $statement = $this->db->prepare("INSERT INTO users (user_id, chat_id, username, first_name, language_code) VALUES (:user_id, :chat_id, :username, :first_name, :language_code)");
-            $statement->execute(array(
+            $data = [
                 'user_id' => $userId,
                 'chat_id' => $chatId,
                 'username' => $username,
                 'first_name' => $userFirstName,
+                'last_name' => $userLasttName,
                 'language_code' => $languageCode
-            ));
+            ];
+
+            $statement = $this->db->prepare("INSERT INTO users (user_id, chat_id, username, first_name, last_name, language_code) VALUES (:user_id, :chat_id, :username, :first_name, :last_name, :language_code)");
+            $statement->execute($data);
+        } else {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            if (isset($userLasttName)) {
+                $stmt = $this->db->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name WHERE id = :id");
+                $stmt->execute([
+                   'first_name' => $userFirstName,
+                   'last_name'  => $userLasttName,
+                   'id' =>  $row['id']
+                ]);
+            }
         }
     }
 

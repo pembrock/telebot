@@ -12,6 +12,7 @@ namespace Telebot\Lib\Bot;
 class Bot
 {
     protected $congratsSticker = 'CAADAgADiQAD6st5AuZbw2Z4SeORAg';
+    protected $fakeCongratsSticker = 'CAADBAAD2QADaAQ9DLJivKL3V-z_Ag';
     protected $bindPattern = '/^(bind) ([a-zA-Zа-яА-Я\s\d]+)/u';
     protected $unbindPattern = '/^(unbind) ([a-zA-Zа-яА-Я\s\d]+)/u';
 
@@ -45,6 +46,10 @@ class Bot
 
     static protected $_congrats = [
         'Красавчик', 'Орёл', 'Молодец', 'Так держать', 'Топчик', 'Грацулевич', 'Умница', 'Гранч', 'Грац', 'Грач', 'Смотрю руки у тебя из правильного места', 'Ты просто космос', 'Это превосходно', 'Ор выше гор'
+    ];
+
+    static protected $_fakeCongrats = [
+        'Это не тот стикер', 'А грач то не настоящий!', 'Это фейк', 'Не вводи людей в заблуждение', 'Скинь правильный стикер', 'Лжец!', 'Щас бы в 2к18 левые стикеры кидать', 'Ну зачем ты это делаешь...', 'Да где ты это вообще взял?', 'Удали подделку', 'А Кольцов в курсе?', 'Китайская подделка', 'Тебе это из Тайваня прислали?', 'Я отличаю оригинал от некачественной реплики'
     ];
 
     static protected $_thanks = ['спасибо', 'спасиба', 'спс'];

@@ -88,6 +88,9 @@ class Main extends Bot
         if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->congratsSticker) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_congrats[array_rand(self::$_congrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
+        if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->fakeCongratsSticker) {
+            $bot->sendMessage($body['message']['chat']['id'], self::$_fakeCongrats[array_rand(self::$_fakeCongrats, 1)] . '!', 'html', true, $body['message']['message_id']);
+        }
 
 //        ob_flush();
 //        ob_start();
@@ -101,28 +104,28 @@ class Main extends Bot
         if (!empty($trigger)) {
             switch ($trigger['type']) {
                 case "animation":
-                    $bot->sendDocument($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendDocument($body['message']['chat']['id'], $trigger['value'], null, $body['message']['message_id']);
                     break;
                 case "photo":
-                    $bot->sendPhoto($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendPhoto($body['message']['chat']['id'], $trigger['value'], null, $body['message']['message_id']);
                     break;
                 case "voice":
-                    $bot->sendVoice($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendVoice($body['message']['chat']['id'], $trigger['value'], null, $body['message']['message_id']);
                     break;
                 case "audio":
-                    $bot->sendAudio($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendAudio($body['message']['chat']['id'], $trigger['value'], null, null, null, $body['message']['message_id']);
                     break;
                 case "video":
-                    $bot->sendVideo($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendVideo($body['message']['chat']['id'], $trigger['value'], null, null, $body['message']['message_id']);
                     break;
                 case "sticker":
-                    $bot->sendSticker($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendSticker($body['message']['chat']['id'], $trigger['value'], $body['message']['message_id']);
                     break;
                 case "video_note":
-                    $bot->sendVideoNote($body['message']['chat']['id'], $trigger['value']);
+                    $bot->sendVideoNote($body['message']['chat']['id'], $trigger['value'], null, null, $body['message']['message_id']);
                     break;
                 default:
-                    $bot->sendMessage($body['message']['chat']['id'], $trigger['value'], 'html', true);
+                    $bot->sendMessage($body['message']['chat']['id'], $trigger['value'], 'html', true, $body['message']['message_id']);
             }
         }
 

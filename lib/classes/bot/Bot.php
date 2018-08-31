@@ -29,6 +29,7 @@ class Bot
 
     static protected  $_numberTitles = ['раз', 'раза', 'раз'];
     static protected  $_dayNumberTitles = ['день', 'дня', 'дней'];
+    static protected  $_yearNumberTitles = ['год', 'года', 'лет'];
     static protected $_monthTitle = [
         1 => 'января',
         2 => 'февраля',
@@ -93,14 +94,23 @@ class Bot
 
     static protected $_magicRandom = [3];
     static protected $_excludeTriggers = ['список триггеров'];
+
+    static protected $_howLong = [
+        'Мы тут с ребятами посовещались и решили что осталось тебе', 'По моим подсчетам, у тебя в запасе', 'Если ты сейчас бросишь пить, то у тебя еще будет', 'У меня для тебя плохие новости. Если постараться, то получишь +', 'Сегодня добавили тебе еще', 'Ну что, голубчик, ваш предел это еще', 'Поздравляю! Тебе осталось'
+    ];
+
     static protected $_commands = [
-        'кто я' => 'whoAmI',
-        'кто свалил' => 'whoLeft',
-        'кто пришел' => 'whoJoin',
-        'админы' => 'whoAdmin',
-        'бескультурщина' => 'whoTopBadWords',
-        'др' => 'getNextBirthday',
-        'топ' => 'getCarmaList',
-        'список триггеров' => 'getTriggersList'
+        'кто я' => ['method' => 'whoAmI', 'disable_preview' => true],
+        'кто свалил' => ['method' => 'whoLeft', 'disable_preview' => true],
+        'кто пришел' => ['method' => 'whoJoin', 'disable_preview' => true],
+        'админы' => ['method' => 'whoAdmin', 'disable_preview' => true],
+        'бескультурщина' => ['method' => 'whoTopBadWords', 'disable_preview' => true],
+        'др' => ['method' => 'getNextBirthday', 'disable_preview' => true],
+        'топ' => ['method' => 'getCarmaList', 'disable_preview' => true],
+        'список триггеров' => ['method' => 'getTriggersList', 'disable_preview' => true],
+        'кинчик' => ['method' => 'getMovie', 'disable_preview' => false],
+        'кому отпуск?' => ['method' => 'whoTopVacationWords', 'disable_preview' => true],
+        'сколько мне еще?' => ['method' => 'howLong', 'disable_preview' => true],
+        'тетрадь смерти' => ['method' => 'getHowLongList', 'disable_preview' => true],
     ];
 }

@@ -36,19 +36,22 @@ class Main extends Bot
     {
         $bot = $this->bot;
         $body = $this->body;
-        $message = mb_strtolower($body['message']['text']);
-        if ($message == 'test') {
-            $bot->sendMessage($body['message']['chat']['id'], 'test', 'html', true, $body['message']['message_id']);
-        }
 
-        $bot->run();
+        if (isset($body['message']['chat']['id']) && !empty($body['message']['chat']['id'])) {
+            $message = mb_strtolower($body['message']['text']);
+            if ($message == 'test') {
+                $bot->sendMessage($body['message']['chat']['id'], 'test', 'html', true, $body['message']['message_id']);
+            }
+
+            $bot->run();
+        }
     }
 
     public function index()
     {
         $bot = $this->bot;
         $body = $this->body;
-
+//        $chatId = $body['message']['chat']['id'];
 
 //            ob_flush();
 //            ob_start();
@@ -62,6 +65,17 @@ class Main extends Bot
 //            file_put_contents('reply_dump.txt', ob_get_flush(), FILE_APPEND);
 //        }
 
+//        if ($this->bot->getChatMembersCount($chatId) != Chat::getCount($chatId)) {
+//            $oldCount = Chat::getCount($chatId);
+//            $newCount = $this->bot->getChatMembersCount($chatId);
+//            $this->updateChat($chatId, true);
+//            if ($oldCount > $newCount) {
+//                $bot->sendMessage($body['message']['chat']['id'], "<b>ВНИМАНИЕ! ОБНАРУЖЕНО ЛИВАНИЕ!</b>\nКогда то нас было <b>{$oldCount}</b>, а теперь нас <b>{$newCount}</b>", 'html');
+//                $bot->sendMessage($body['message']['chat']['id'], "Давайте попросим Дашу следопыта найти ливнувшего ублюдка!", 'html');
+//            }
+//        }
+//
+//        $this->updateChat($chatId, false);
         $this->checkUser($body['message']);
 
 //        $this->updateUserName($body['message']['chat']['id']);
@@ -88,16 +102,12 @@ class Main extends Bot
         if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->congratsSticker) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_congrats[array_rand(self::$_congrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
+
         if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->fakeCongratsSticker) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_fakeCongrats[array_rand(self::$_fakeCongrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
 
-//        ob_flush();
-//        ob_start();
-//        print_r($body);
-//        file_put_contents('var_dump.txt', ob_get_flush(), FILE_APPEND);
-
-        $message = mb_strtolower($body['message']['text']);
+        $message = isset($body['message']['text']) ? mb_strtolower($body['message']['text']) : '';
         $trigger = $this->checkTrigger($body['message']['chat']['id'], $message);
 
         //проверяет не установлен ли триггер на фразу
@@ -166,15 +176,15 @@ class Main extends Bot
         if (!ObsceneCensorRus::isAllowed($message)) {
             $this->addBadWords($body['message']['from']['id'], $body['message']['chat']['id'], $body['message']['from']['username']);
 
-            $rand = rand(1,5);
+            $rand = rand(1,8);
             if (in_array($rand, self::$_magicRandom)) {
                 $bot->sendMessage($body['message']['chat']['id'], self::$_stopBadWords[array_rand(self::$_stopBadWords, 1)], 'html', true, $body['message']['message_id']);
             }
         }
 
         if (isset(self::$_commands[$message])) {
-            $text = $this->{self::$_commands[$message]}($body['message']['chat']['id']);
-            $bot->sendMessage($body['message']['chat']['id'], $text, 'html', true, $body['message']['message_id']);
+            $text = $this->{self::$_commands[$message]['method']}($body['message']['chat']['id']);
+            $bot->sendMessage($body['message']['chat']['id'], $text, 'html', self::$_commands[$message]['disable_preview'], $body['message']['message_id']);
         }
 
         if ($message == 'ping') {
@@ -183,7 +193,8 @@ class Main extends Bot
 //    $bot->sendMessage("@stop_tc3o_nagging", "test");
         }
 
-        if (mb_strpos($message, 'отпуск') !== false) {
+        if (mb_strpos($message, 'отпуск') !== false && $message != "кому отпуск?") {
+            $this->addVacationWord($body['message']['from']['id'], $body['message']['chat']['id'], $body['message']['from']['username']);
             $bot->sendMessage($body['message']['chat']['id'], self::$_vacation[array_rand(self::$_vacation, 1)], 'html', true, $body['message']['message_id']);
         }
 
@@ -217,6 +228,10 @@ class Main extends Bot
             $horoText = $horoscope->get();
             $bot->sendMessage($body['message']['chat']['id'], $horoText, 'html', true, $body['message']['message_id']);
         }
+
+//        if (mb_strpos($message, 'что посмотреть') !== false) {
+//            $bot->sendMessage($body['message']['chat']['id'], $this->getMovie(), 'html', false, $body['message']['message_id']);
+//        }
 
         //$update = $bot->getUpdates();
         //ob_flush();
@@ -504,6 +519,40 @@ class Main extends Bot
         }
     }
 
+    /**
+     * Статистика разговоров про отпуск
+     * @param $userId
+     * @param $chatId
+     * @param $username
+     */
+    public function addVacationWord($userId, $chatId, $username)
+    {
+        $date = new DateTime();
+        $query = $this->db->prepare("SELECT * FROM charts WHERE user_id = :user_id AND chat_id = :chat_id AND action_type = :action_type");
+        $query->execute(array('user_id' => $userId, 'chat_id' => $chatId, 'action_type' => 'vacation'));
+        if( $query->rowCount() > 0 ) {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update, counter = :counter WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type");
+            $statement->execute(array(
+                'chat_id' => $chatId,
+                'user_id' => $userId,
+                'action_type' => 'badword',
+                'counter'   => $row['counter'] + 1,
+                'last_update' => $date->format('Y-m-d H:i:s')
+            ));
+        } else {
+            $statement = $this->db->prepare("INSERT INTO charts (chat_id, user_id, username, action_type, counter, last_update) VALUES (:chat_id, :user_id, :username, :action_type, :counter, :last_update)");
+            $statement->execute(array(
+                'chat_id' => $chatId,
+                'user_id' => $userId,
+                'username' => $username,
+                'action_type' => 'vacation',
+                'counter' => 1,
+                'last_update' => $date->format('Y-m-d H:i:s')
+            ));
+        }
+    }
+
 
     /**
      * Выводит список самых сквернословных
@@ -531,6 +580,27 @@ class Main extends Bot
         return $text;
     }
 
+    public function whoTopVacationWords($chatId)
+    {
+        $text = "<b>Чаще всего про отпуск говорят:</b>\n\n";
+        $query = $this->db->prepare( "SELECT username, counter
+			 FROM charts
+			 WHERE action_type = :action_type AND chat_id = :chat_id AND counter > 0 ORDER BY counter DESC LIMIT 10" );
+        $query->execute(array('action_type' => 'vacation', 'chat_id' => $chatId));
+        if( $query->rowCount() > 0 ) {
+            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+            $index = 1;
+            foreach ($rows as  $row) {
+                $text .= "{$index}. <a href='t.me/{$row['username']}'>{$row['username']}</a> ({$row['counter']})\n";
+                $index++;
+            }
+        } else {
+            $text .= "Никто не хочет в отпуск. Все любят работать";
+        }
+
+        return $text;
+    }
+
     /**
      * Выводит список ближайших 10 дней рождений
      * @param $chatId
@@ -539,15 +609,30 @@ class Main extends Bot
     public function getNextBirthday($chatId)
     {
         $text = "<b>Ближайшие ДР:</b>\n\n";
-        $query = $this->db->prepare("select * from ( select *, datediff(DATE_FORMAT(birthday,concat('%',YEAR(CURDATE()),'-%m-%d')),NOW()) as no_of_days from users union select *, datediff(DATE_FORMAT(birthday,concat('%',(YEAR(CURDATE())+1),'-%m-%d')),NOW()) as no_of_days from users ) AS upcomingbirthday WHERE no_of_days>0 AND chat_id = :chat_id GROUP BY id ORDER BY no_of_days asc LIMIT 10");
+        $query = $this->db->prepare("select * from ( select *, datediff(DATE_FORMAT(birthday,concat('%',YEAR(CURDATE()),'-%m-%d')),NOW()) as no_of_days from users union select *, datediff(DATE_FORMAT(birthday,concat('%',(YEAR(CURDATE())+1),'-%m-%d')),NOW()) as no_of_days from users ) AS upcomingbirthday WHERE no_of_days>=0 AND chat_id = :chat_id GROUP BY id ORDER BY no_of_days asc LIMIT 10");
         $query->execute(array('chat_id' => $chatId));
         if( $query->rowCount() > 0 ) {
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
             $index = 1;
             foreach ($rows as  $row) {
+                $user = new Users($row['user_id']);
+                $nameData = [
+                    'username' => $row['username'],
+                    'first_name' => $row['first_name'],
+                    'last_name' => $row['last_name'],
+                ];
+                $username = $user->getUsername(null, $nameData);
+                if (empty($username)) {
+                    $username = $row['username'];
+                }
                 $date = new DateTime($row['birthday']);
                 $date_str = $date->format('j') . ' ' . self::$_monthTitle[$date->format('n')];
-                $text .= "{$index}. <a href='t.me/{$row['username']}'>{$row['username']}</a> (Через {$this->declOfNum($row['no_of_days'], self::$_dayNumberTitles)}) - {$date_str}\n";
+                if ($row['no_of_days'] == 0) {
+                    $text_day = "<b>ДР уже сегодня, а вы наверное забыли!</b> /{$username}_s_dr";
+                } else {
+                    $text_day = "(Через {$this->declOfNum($row['no_of_days'], self::$_dayNumberTitles)}) - {$date_str}";
+                }
+                $text .= "{$index}. <a href='t.me/{$row['username']}'>{$username}</a> {$text_day}\n";
                 $index++;
             }
 
@@ -653,7 +738,7 @@ class Main extends Bot
     {
         $text = "<b>Список кармических топов:</b>\n\n";
         $query = $this->db->prepare( "SELECT u.username, SUM(ah.count) as `count` FROM `action_history` ah INNER JOIN users u ON u.user_id = ah.to_user
-			 WHERE ah.action_type = :action_type AND ah.chat_id = :chat_id AND u.chat_id = :chat_id AND ah.count != 0 GROUP BY ah.to_user ORDER BY count DESC LIMIT 10");
+			 WHERE ah.action_type = :action_type AND ah.chat_id = :chat_id AND u.chat_id = :chat_id AND ah.count != 0 GROUP BY ah.to_user ORDER BY count DESC LIMIT 15");
         $query->execute(array('action_type' => 'carma', 'chat_id' => $chatId));
         if( $query->rowCount() > 0 ) {
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -721,7 +806,7 @@ class Main extends Bot
      * @param $replyMessage
      * @return string
      */
-    public function setBind($chatId, $triggerName, $replyMessage)
+    private function setBind($chatId, $triggerName, $replyMessage)
     {
         $type = 'text';
         $value = null;
@@ -789,7 +874,7 @@ class Main extends Bot
      * @param $triggerName
      * @return string
      */
-    public function unsetBind($chatId, $triggerName)
+    private function unsetBind($chatId, $triggerName)
     {
         $query = $this->db->prepare("SELECT * FROM triggers WHERE chat_id = :chat_id AND name = :name");
         $query->execute(['chat_id' => $chatId, 'name' => $triggerName]);
@@ -805,5 +890,121 @@ class Main extends Bot
         }
 
         return $result;
+    }
+
+    private function updateChat($chatId, $updateCount = false)
+    {
+        $date = new DateTime();
+        $count = $this->bot->getChatMembersCount($chatId);
+        $chatObj = $this->bot->getChat($chatId);
+        $chat = [
+            'chat_id' => $chatObj->getId(),
+            'type' => $chatObj->getType(),
+            'title' => $chatObj->getTitle(),
+            'username' => $chatObj->getUsername(),
+            'first_name' => $chatObj->getFirstName(),
+            'last_name' => $chatObj->getLastName(),
+            'description' => $chatObj->getDescription(),
+            'invite_link' => $chatObj->getInviteLink(),
+            'pinned_message' => $chatObj->getPinnedMessage(),
+            'count' => $count,
+            'last_update' => $date->format('Y-m-d H:i:s')
+        ];
+
+        $query = $this->db->prepare("SELECT * FROM chats WHERE chat_id = :chat_id");
+        $query->execute(['chat_id' => $chatId]);
+        if ($query->rowCount() > 0) {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            if ((strtotime($row['last_update']) <  time() - 60*60*4) || $updateCount == true) {
+                $query = $this->db->prepare("UPDATE chats SET `type` = :type, title = :title, username = :username, first_name = :first_name, last_name = :last_name, description = :description, invite_link = :invite_link, pinned_message = :pinned_message, `count` = :count, last_update = :last_update WHERE chat_id = :chat_id");
+                $query->execute($chat);
+            }
+        } else {
+            $query = $this->db->prepare("INSERT INTO chats (chat_id, `type`, title, username, first_name, last_name, description, invite_link, pinned_message, `count`, last_update) VALUES (:chat_id, :type, :title, :username, :first_name, :last_name, :description, :invite_link, :pinned_message, :count, :last_update)");
+            $query->execute($chat);
+        }
+    }
+
+    public function getMovie()
+    {
+        $query = $this->db->prepare("SELECT f.* FROM movies f JOIN ( SELECT rand() * (SELECT max(id) from movies) AS max_id ) AS m WHERE f.id >= m.max_id ORDER BY f.id ASC LIMIT 1");
+        $query->execute();
+        if ($query->rowCount() > 0) {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            $text = "<b>{$row['title']}</b>\n\n";
+            $text .= $row['description'] . "\n";
+            if (!empty($row['link'])) {
+                $text .= "\n" . $row['link'];
+            }
+            $result = $text;
+        } else {
+            $result = "База пуста, милорд";
+        }
+
+        $result .= "\n\nДля добавления своей любимой фигни воспользуйтесь ботом @GarbageCollectionBot";
+
+        return $result;
+    }
+
+    public function howLong($chatId)
+    {
+        $date = new DateTime();
+        $randYear = rand(1, 55);
+        $userId = $this->body['message']['from']['id'];
+        $result = '';
+        $query = $this->db->prepare("SELECT * FROM charts WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type LIMIT 1");
+        $query->execute(array(
+            'chat_id' => $chatId,
+            'user_id' => $userId,
+            'action_type' => 'howlong'
+        ));
+        if ($query->rowCount() > 0) {
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            $str_date = $row['last_update'];
+            $history['id'] = $row['id'];
+            if (strtotime($str_date) >  time() - 60*60*4) {
+                $result = "Мы ведь с тобой уже все выяснили! Тебе осталось {$this->declOfNum($row['counter'], self::$_yearNumberTitles)}. Приходи попозже.";
+            } else {
+                $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update, counter = :counter WHERE id = :id");
+                $statement->execute(array(
+                    'count' => $randYear,
+                    'last_update' => $date->format('Y-m-d H:i:s'),
+                    'id' => $row['id']
+                ));
+                $result = self::$_howLong[array_rand(self::$_howLong, 1)] . " {$this->declOfNum($randYear, self::$_yearNumberTitles)}";
+            }
+        } else {
+            $statement = $this->db->prepare("INSERT INTO charts (chat_id, user_id, username, last_update, counter, action_type) VALUES (:chat_id, :user_id, :username, :last_update, :counter, :action_type)");
+            $statement->execute(array(
+                'chat_id' => $chatId,
+                'user_id' => $userId,
+                'username' => $this->body['message']['from']['username'],
+                'counter' => $randYear,
+                'last_update' => $date->format('Y-m-d H:i:s'),
+                'action_type' => 'howlong'
+            ));
+            $result = self::$_howLong[array_rand(self::$_howLong, 1)] . " {$this->declOfNum($randYear, self::$_yearNumberTitles)}";
+        }
+
+        return $result;
+    }
+
+    public function getHowLongList($chatId)
+    {
+        $text = "<b>Список долгожителей:</b>\n\n";
+        $query = $this->db->prepare( "SELECT * FROM charts WHERE chat_id = :chat_id AND action_type = :action_type ORDER BY counter DESC LIMIT 15");
+        $query->execute(array('action_type' => 'howlong', 'chat_id' => $chatId));
+        if( $query->rowCount() > 0 ) {
+            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+            $index = 1;
+            foreach ($rows as  $row) {
+                $text .= "{$index}. <a href='t.me/{$row['username']}'>{$row['username']}</a> (Протянет еще <b>{$this->declOfNum($row['counter'], self::$_yearNumberTitles)}</b>)\n";
+                $index++;
+            }
+        } else {
+            $text .= "Наверное все умерли.";
+        }
+
+        return $text;
     }
 }

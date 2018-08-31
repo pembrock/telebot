@@ -198,6 +198,10 @@ class Main extends Bot
             $bot->sendMessage($body['message']['chat']['id'], self::$_vacation[array_rand(self::$_vacation, 1)], 'html', true, $body['message']['message_id']);
         }
 
+        if (mb_strpos($message, 'сколько мне еще') !== false && $message != "сколько мне еще?") {
+            $bot->sendMessage($body['message']['chat']['id'], $this->getRandomYear(), 'html', true, $body['message']['message_id']);
+        }
+
         if ($message == 'круто') {
             $bot->sendMessage($body['message']['chat']['id'], self::$_awesome[array_rand(self::$_awesome, 1)], 'html', true, $body['message']['message_id']);
         }
@@ -987,6 +991,13 @@ class Main extends Bot
         }
 
         return $result;
+    }
+
+    public function getRandomYear()
+    {
+        $randYear = rand(1, 89);
+        return self::$_howLong[array_rand(self::$_howLong, 1)] . " {$this->declOfNum($randYear, self::$_yearNumberTitles)}";
+
     }
 
     public function getHowLongList($chatId)

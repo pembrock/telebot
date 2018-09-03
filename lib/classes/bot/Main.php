@@ -23,13 +23,15 @@ class Main extends Bot
     private $botCreator;
     protected $bot;
     protected $body;
+    protected $cron;
 
-    public function __construct()
+    public function __construct($cron = false)
     {
         $this->db = Database::getInstance();
         $this->bot = new Client(Config::get('token'));
         $this->body = json_decode($this->bot->getRawBody(), true);
         $this->botCreator = Config::get('bot_creator');
+        $this->cron = $cron;
     }
 
     public function test()
@@ -51,6 +53,7 @@ class Main extends Bot
     {
         $bot = $this->bot;
         $body = $this->body;
+
 //        $chatId = $body['message']['chat']['id'];
 
 //            ob_flush();
@@ -76,6 +79,14 @@ class Main extends Bot
 //        }
 //
 //        $this->updateChat($chatId, false);
+
+        if ($this->cron === true) {
+            $updateUserStatus = $this->updateUsersStatus($body['message']['chat']['id']);
+            if (!empty($updateUserStatus)) {
+                $bot->sendMssage($body['message']['chat']['id'], "<b>Кто успел нас покинуть:</b>\n" . $updateUserStatus, 'html', true);
+            }
+        }
+
         $this->checkUser($body['message']);
 
 //        $this->updateUserName($body['message']['chat']['id']);
@@ -200,6 +211,11 @@ class Main extends Bot
 
         if (mb_strpos($message, 'сколько мне еще') !== false && $message != "сколько мне еще?") {
             $bot->sendMessage($body['message']['chat']['id'], $this->getRandomYear(), 'html', true, $body['message']['message_id']);
+        }
+
+        if ($message == "сколько мне еще?" || $message == "сколько мне ещё?") {
+            $result = $this->howLong($body['message']['chat']['id'], $body['message']['from']['id']);
+            $bot->sendMessage($body['message']['chat']['id'], $result, 'html', true, $body['message']['message_id']);
         }
 
         if ($message == 'круто') {
@@ -632,7 +648,7 @@ class Main extends Bot
                 $date = new DateTime($row['birthday']);
                 $date_str = $date->format('j') . ' ' . self::$_monthTitle[$date->format('n')];
                 if ($row['no_of_days'] == 0) {
-                    $text_day = "<b>ДР уже сегодня, а вы наверное забыли!</b> /{$username}_s_dr";
+                    $text_day = "<b>ДР уже сегодня, а вы наверное забыли!</b> /{$row['username']}_s_dr";
                 } else {
                     $text_day = "(Через {$this->declOfNum($row['no_of_days'], self::$_dayNumberTitles)}) - {$date_str}";
                 }
@@ -950,11 +966,10 @@ class Main extends Bot
         return $result;
     }
 
-    public function howLong($chatId)
+    public function howLong($chatId, $userId)
     {
         $date = new DateTime();
-        $randYear = rand(1, 55);
-        $userId = $this->body['message']['from']['id'];
+        $randYear = rand(1, 65);
         $result = '';
         $query = $this->db->prepare("SELECT * FROM charts WHERE chat_id = :chat_id AND user_id = :user_id AND action_type = :action_type LIMIT 1");
         $query->execute(array(
@@ -966,16 +981,16 @@ class Main extends Bot
             $row = $query->fetch(PDO::FETCH_ASSOC);
             $str_date = $row['last_update'];
             $history['id'] = $row['id'];
-            if (strtotime($str_date) >  time() - 60*60*4) {
-                $result = "Мы ведь с тобой уже все выяснили! Тебе осталось {$this->declOfNum($row['counter'], self::$_yearNumberTitles)}. Приходи попозже.";
-            } else {
+            if (strtotime($str_date) <  time() - 60*60*4) {
                 $statement = $this->db->prepare("UPDATE charts SET last_update = :last_update, counter = :counter WHERE id = :id");
                 $statement->execute(array(
-                    'count' => $randYear,
+                    'counter' => $randYear,
                     'last_update' => $date->format('Y-m-d H:i:s'),
                     'id' => $row['id']
                 ));
                 $result = self::$_howLong[array_rand(self::$_howLong, 1)] . " {$this->declOfNum($randYear, self::$_yearNumberTitles)}";
+            } else {
+                $result = "Мы ведь с тобой уже все выяснили! Тебе осталось {$this->declOfNum($row['counter'], self::$_yearNumberTitles)}. Приходи попозже.";
             }
         } else {
             $statement = $this->db->prepare("INSERT INTO charts (chat_id, user_id, username, last_update, counter, action_type) VALUES (:chat_id, :user_id, :username, :last_update, :counter, :action_type)");
@@ -1017,5 +1032,41 @@ class Main extends Bot
         }
 
         return $text;
+    }
+
+    public function updateUsersStatus($chatId)
+    {
+        $leftUsers = '';
+        $date = new DateTime();
+        $query = $this->db->prepare("SELECT * FROM users WHERE chat_id = :chat_id");
+        $query->execute(['chat_id' => $chatId]);
+        if ($query->rowCount() > 0) {
+            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+            $index = 1;
+            file_put_contents('chatMembersCount.txt', count($rows), FILE_APPEND);
+            foreach ($rows as $row) {
+                $chatMember = $this->bot->getChatMember($chatId, $row['user_id']);
+                $userStatus = $chatMember->getStatus();
+                file_put_contents('chatMembers2.txt', $row['user_id'] . " " . $userStatus . " " . $row['is_deleted'] . "\n", FILE_APPEND);
+                if (in_array($userStatus, self::$_leftStatus) && $row['is_deleted'] == 0) {
+                    $leftUsers = "{$index}. {$row['username']} {$date->format("d-m-Y")}\n";
+                    $query = $this->db->prepare("UPDATE users SET is_deleted = 1 WHERE id = :id");
+                    $query->execute([
+                       'id' => $row['id']
+                    ]);
+                    $index++;
+                }
+
+                if (in_array($userStatus, self::$_rightStatus) && $row['is_deleted'] == 1) {
+                    $query = $this->db->prepare("UPDATE users SET is_deleted = 0 WHERE id = :id");
+                    $query->execute([
+                        'id' => $row['id']
+                    ]);
+                }
+                sleep(4);
+            }
+        }
+
+        return $leftUsers;
     }
 }

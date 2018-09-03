@@ -13,10 +13,12 @@ class Bot
 {
     protected $congratsSticker = 'CAADAgADiQAD6st5AuZbw2Z4SeORAg';
     protected $fakeCongratsSticker = 'CAADBAAD2QADaAQ9DLJivKL3V-z_Ag';
-    protected $bindPattern = '/^(bind) ([a-zA-Zа-яА-Я\s\d]+)/u';
-    protected $unbindPattern = '/^(unbind) ([a-zA-Zа-яА-Я\s\d]+)/u';
+    protected $bindPattern = '/^(set) ([a-zA-Zа-яА-Я\s\d]+)/u';
+    protected $unbindPattern = '/^(unset) ([a-zA-Zа-яА-Я\s\d]+)/u';
 
     static protected $_adminStatus = ['creator', 'administrator'];
+    static protected $_leftStatus = ['left', 'kicked'];
+    static protected $_rightStatus = ['member'];
     static protected $_words = [
         'Ты - принц, Экли, детка', 'Ты - ужас, летящий на крыльях ночи', 'Ты - чмо', 'Ты - инженер на сотню рублей', 'Ты меня бесишь', 'Ты задрот и дрищ. Ты даже кота отпиздить не сможешь', 'Ты - принцесса', 'Ты старый', 'Ты жирный', 'Ты большой молодец', 'Ты человек летучая мышь', 'Ты мог бы быть лучше', 'Ты остался таким же как и был', 'Кто ты?', 'Ты чудо', 'Ты восхитителен', 'Ты правый', 'Ты левый', 'Ты такой же как все', 'Ты не лишен простоты', 'Ты не смешной', 'Ты рок звезда', 'Ты такой же как Путин', 'Ты рыжая из ВИА Гры', 'Ты твинк', 'Ты самый лучший человек на Земле'
     ];
@@ -110,7 +112,7 @@ class Bot
         'список триггеров' => ['method' => 'getTriggersList', 'disable_preview' => true],
         'кинчик' => ['method' => 'getMovie', 'disable_preview' => false],
         'кому отпуск?' => ['method' => 'whoTopVacationWords', 'disable_preview' => true],
-        'сколько мне еще?' => ['method' => 'howLong', 'disable_preview' => true],
+//        'сколько мне еще?' => ['method' => 'howLong', 'disable_preview' => true],
         'тетрадь смерти' => ['method' => 'getHowLongList', 'disable_preview' => true],
     ];
 }

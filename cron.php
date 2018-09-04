@@ -22,11 +22,11 @@ if (!isset($argv[2])) {
 
 $chatId = $argv[1];
 //$chatId = "-1001192747562";
-$testChatId = "-1001136482619";
+//$testChatId = "-1001136482619";
 
 $mainBot = new Main();
 $bot = new Client(Config::get('token'));
 if ($argv[2] == 'getbirthday') {
     $result = $mainBot->getNextBirthday($chatId);
-    $bot->sendMessage($testChatId, $result, 'html', true);
+    $bot->sendMessage($chatId, $result, 'html', true);
 }

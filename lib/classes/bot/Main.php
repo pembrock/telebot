@@ -114,7 +114,7 @@ class Main extends Bot
             $bot->sendMessage($body['message']['chat']['id'], self::$_congrats[array_rand(self::$_congrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
 
-        if (isset($body['message']['sticker']) && $body['message']['sticker']['file_id'] == $this->fakeCongratsSticker) {
+        if (isset($body['message']['sticker']) && in_array($body['message']['sticker']['file_id'], $this->fakeCongratsSticker)) {
             $bot->sendMessage($body['message']['chat']['id'], self::$_fakeCongrats[array_rand(self::$_fakeCongrats, 1)] . '!', 'html', true, $body['message']['message_id']);
         }
 

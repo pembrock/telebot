@@ -12,7 +12,7 @@ namespace Telebot\Lib\Bot;
 class Bot
 {
     protected $congratsSticker = 'CAADAgADiQAD6st5AuZbw2Z4SeORAg';
-    protected $fakeCongratsSticker = 'CAADBAAD2QADaAQ9DLJivKL3V-z_Ag';
+    protected $fakeCongratsSticker = ['CAADBAAD2QADaAQ9DLJivKL3V-z_Ag', 'CAADAgADcgADbmepF5Zn-5RIubmnAg'];
     protected $bindPattern = '/^(set) ([a-zA-Zа-яА-Я\s\d]+)/u';
     protected $unbindPattern = '/^(unset) ([a-zA-Zа-яА-Я\s\d]+)/u';
 

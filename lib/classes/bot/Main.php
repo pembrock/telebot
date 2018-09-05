@@ -23,15 +23,13 @@ class Main extends Bot
     private $botCreator;
     protected $bot;
     protected $body;
-    protected $cron;
 
-    public function __construct($cron = false)
+    public function __construct()
     {
         $this->db = Database::getInstance();
         $this->bot = new Client(Config::get('token'));
         $this->body = json_decode($this->bot->getRawBody(), true);
         $this->botCreator = Config::get('bot_creator');
-        $this->cron = $cron;
     }
 
     public function test()
@@ -79,13 +77,6 @@ class Main extends Bot
 //        }
 //
 //        $this->updateChat($chatId, false);
-
-        if ($this->cron === true) {
-            $updateUserStatus = $this->updateUsersStatus($body['message']['chat']['id']);
-            if (!empty($updateUserStatus)) {
-                $bot->sendMssage($body['message']['chat']['id'], "<b>Кто успел нас покинуть:</b>\n" . $updateUserStatus, 'html', true);
-            }
-        }
 
         $this->checkUser($body['message']);
 
@@ -1042,41 +1033,5 @@ class Main extends Bot
         }
 
         return $text;
-    }
-
-    public function updateUsersStatus($chatId)
-    {
-        $leftUsers = '';
-        $date = new DateTime();
-        $query = $this->db->prepare("SELECT * FROM users WHERE chat_id = :chat_id");
-        $query->execute(['chat_id' => $chatId]);
-        if ($query->rowCount() > 0) {
-            $rows = $query->fetchAll(PDO::FETCH_ASSOC);
-            $index = 1;
-            file_put_contents('chatMembersCount.txt', count($rows), FILE_APPEND);
-            foreach ($rows as $row) {
-                $chatMember = $this->bot->getChatMember($chatId, $row['user_id']);
-                $userStatus = $chatMember->getStatus();
-                file_put_contents('chatMembers2.txt', $row['user_id'] . " " . $userStatus . " " . $row['is_deleted'] . "\n", FILE_APPEND);
-                if (in_array($userStatus, self::$_leftStatus) && $row['is_deleted'] == 0) {
-                    $leftUsers = "{$index}. {$row['username']} {$date->format("d-m-Y")}\n";
-                    $query = $this->db->prepare("UPDATE users SET is_deleted = 1 WHERE id = :id");
-                    $query->execute([
-                       'id' => $row['id']
-                    ]);
-                    $index++;
-                }
-
-                if (in_array($userStatus, self::$_rightStatus) && $row['is_deleted'] == 1) {
-                    $query = $this->db->prepare("UPDATE users SET is_deleted = 0 WHERE id = :id");
-                    $query->execute([
-                        'id' => $row['id']
-                    ]);
-                }
-                sleep(4);
-            }
-        }
-
-        return $leftUsers;
     }
 }

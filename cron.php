@@ -11,6 +11,7 @@ include "vendor/autoload.php";
 use Telebot\Lib\Bot\Main;
 use TelegramBot\Api\Client;
 use Telebot\Lib\Config\Config;
+use Telebot\Lib\Bot\Users;
 
 if (!isset($argv[1])) {
     die("No chat_id params");
@@ -22,11 +23,27 @@ if (!isset($argv[2])) {
 
 $chatId = $argv[1];
 //$chatId = "-1001192747562";
-//$testChatId = "-1001136482619";
+$testChatId = "-1001136482619";
 
 $mainBot = new Main();
 $bot = new Client(Config::get('token'));
 if ($argv[2] == 'getbirthday') {
     $result = $mainBot->getNextBirthday($chatId);
     $bot->sendMessage($chatId, $result, 'html', true);
+}
+
+if ($argv[2] == 'checkbirthday') {
+    $users = new Users();
+    $result = $users->checkTodayBirthday($chatId);
+    if ($result !== false) {
+        $bot->sendMessage($chatId, $result, 'html', true);
+    }
+}
+
+if ($argv[2] == 'checkusersstatus') {
+    $users = new Users();
+    $result = $users->updateUsersStatus($chatId, $bot);
+    if ($result !== false && !empty($result)) {
+        $bot->sendMessage($testChatId, $result, 'html', true);
+    }
 }

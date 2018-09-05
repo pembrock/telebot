@@ -719,16 +719,14 @@ class Main extends Bot
                     'action_type' => 'carma'
                 ));
             }
-            $query = $this->db->prepare( "SELECT u.username, SUM(ah.count) as `count` FROM `action_history` ah INNER JOIN users u ON u.user_id = ah.to_user
+            $query2 = $this->db->prepare( "SELECT u.username, SUM(ah.count) as `count` FROM `action_history` ah INNER JOIN users u ON u.user_id = ah.to_user
 			 WHERE ah.action_type = :action_type AND ah.chat_id = :chat_id AND u.chat_id = :chat_id AND ah.count != 0 AND ah.to_user : to_user GROUP BY ah.to_user");
-            $query->execute(array('action_type' => 'carma', 'chat_id' => $chatId, 'to_user' => $toUser));
-            if( $query->rowCount() > 0 ) {
-                $row = $query->fetch(PDO::FETCH_ASSOC);
-                if (in_array($row['count'], [10, 30, 50, 70, 100])) {
-                    $result = "<a href='t.me/{$username}'>{$username}</a> получил {$counter} кармических лойсов";
-                } else {
-                    $result = 'OK';
-                }
+            $query2->execute(array('action_type' => 'carma', 'chat_id' => $chatId, 'to_user' => $toUser));
+            $row2 = $query2->fetch(PDO::FETCH_ASSOC);
+            if (in_array($row2['count'], [10, 30, 50, 70, 100])) {
+                $result = "<a href='t.me/{$username}'>{$username}</a> получил {$row2['count']} кармических лойсов";
+            } else {
+                $result = 'OK';
             }
         } else {
             if (isset($history['fails']) && $history['fails'] != 3) {

@@ -232,13 +232,17 @@ class Main extends Bot
 
         //изменение кармы
         if (in_array($message, self::$_carmaChange) && isset($body['message']['reply_to_message'])) {
-            $toUserId = $body['message']['reply_to_message']['from']['id'];
-            $fromUserId = $body['message']['from']['id'];
-            $username = $body['message']['reply_to_message']['from']['username'];
-            if ($fromUserId != $toUserId) {
-                $carmaResult = $this->changeCarma($body['message']['chat']['id'], $fromUserId, $toUserId, $message, $username);
-                if ($carmaResult != 'OK') {
-                    $bot->sendMessage($body['message']['chat']['id'], $carmaResult, 'html', true, $body['message']['message_id']);
+            if (in_array($body['message']['reply_to_message']['text'], self::$_carmaChange)) {
+                $bot->sendMessage($body['message']['chat']['id'], self::$_chitCarma[array_rand(self::$_chitCarma, 1)], 'html', true, $body['message']['message_id']);
+            } else {
+                $toUserId = $body['message']['reply_to_message']['from']['id'];
+                $fromUserId = $body['message']['from']['id'];
+                $username = $body['message']['reply_to_message']['from']['username'];
+                if ($fromUserId != $toUserId) {
+                    $carmaResult = $this->changeCarma($body['message']['chat']['id'], $fromUserId, $toUserId, $message, $username);
+                    if ($carmaResult != 'OK') {
+                        $bot->sendMessage($body['message']['chat']['id'], $carmaResult, 'html', true, $body['message']['message_id']);
+                    }
                 }
             }
         }
@@ -724,10 +728,16 @@ class Main extends Bot
                     'action_type' => 'carma'
                 ));
             }
-            if (in_array($counter, [10, 30, 50, 70, 100])) {
-                $result = "<a href='t.me/{$username}'>{$username}</a> получил {$counter} кармических лойсов";
-            } else {
-                $result = 'OK';
+            $query = $this->db->prepare( "SELECT u.username, SUM(ah.count) as `count` FROM `action_history` ah INNER JOIN users u ON u.user_id = ah.to_user
+			 WHERE ah.action_type = :action_type AND ah.chat_id = :chat_id AND u.chat_id = :chat_id AND ah.count != 0 AND ah.to_user : to_user GROUP BY ah.to_user");
+            $query->execute(array('action_type' => 'carma', 'chat_id' => $chatId, 'to_user' => $toUser));
+            if( $query->rowCount() > 0 ) {
+                $row = $query->fetch(PDO::FETCH_ASSOC);
+                if (in_array($row['count'], [10, 30, 50, 70, 100])) {
+                    $result = "<a href='t.me/{$username}'>{$username}</a> получил {$counter} кармических лойсов";
+                } else {
+                    $result = 'OK';
+                }
             }
         } else {
             if (isset($history['fails']) && $history['fails'] != 3) {

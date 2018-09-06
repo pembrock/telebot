@@ -158,7 +158,7 @@ class Users
     {
         $leftUsers = '';
         $date = new DateTime();
-        $query = $this->db->prepare("SELECT value FROM system_action WHERE name = :name");
+        $query = $this->db->prepare("SELECT `value` FROM system_actions WHERE name = :name");
         $query->execute(['name' => 'check_users']);
         if ($query->rowCount() > 0) {
             $offset = $query->fetchColumn();
@@ -166,27 +166,33 @@ class Users
             return false;
         }
 
-        $query = $this->db->prepare("SELECT * FROM `users` WHERE chat_id = :chat_id LIMIT 20 OFFSET :offset");
-        $query->bindValue(':offset', $offset);
-        $query->execute(['chat_id' => $chatId]);
+        $query = $this->db->prepare("SELECT * FROM `users` WHERE is_deleted = 0 AND chat_id = :chat_id LIMIT 20 OFFSET :offset");
+        $query->bindValue(':chat_id', $chatId, PDO::PARAM_INT);
+        $query->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $query->execute();
         if ($query->rowCount() > 0) {
             $rows = $query->fetchAll(PDO::FETCH_ASSOC);
-            $index = 1;
             foreach ($rows as $row) {
-                $chatMember = $bot->getChatMember($chatId, $row['user_id']);
-                $userStatus = $chatMember->getStatus();
-                file_put_contents('cron_check_users.txt', $row['user_id'] . " " . $userStatus . " " . $row['is_deleted'] . "\n", FILE_APPEND);
-                if (in_array($userStatus, Bot::$_leftStatus) && $row['is_deleted'] == 0) {
-                    $leftUsers = "{$index}. {$row['username']} {$date->format("d-m-Y")}\n";
-                    $query = $this->db->prepare("UPDATE users SET is_deleted = 1 WHERE id = :id");
-                    $query->execute([
-                        'id' => $row['id']
-                    ]);
-                    $index++;
-                }
+                try {
+                    $chatMember = $bot->getChatMember($chatId, $row['user_id']);
+                    $userStatus = $chatMember->getStatus();
+                    if (in_array($userStatus, Bot::$_leftStatus) && $row['is_deleted'] == 0) {
+                        $leftUsers .= "<a href='t.me/{$row['username']}'>{$row['username']}</a>\n";
+                        $query = $this->db->prepare("UPDATE users SET is_deleted = 1 WHERE id = :id");
+                        $query->execute([
+                            'id' => $row['id']
+                        ]);
+                    }
 
-                if (in_array($userStatus, Bot::$_rightStatus) && $row['is_deleted'] == 1) {
-                    $query = $this->db->prepare("UPDATE users SET is_deleted = 0 WHERE id = :id");
+                    if (in_array($userStatus, Bot::$_rightStatus) && $row['is_deleted'] == 1) {
+                        $query = $this->db->prepare("UPDATE users SET is_deleted = 0 WHERE id = :id");
+                        $query->execute([
+                            'id' => $row['id']
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    $leftUsers .= "<a href='t.me/{$row['username']}'>{$row['username']}</a>\n";
+                    $query = $this->db->prepare("UPDATE users SET is_deleted = 1 WHERE id = :id");
                     $query->execute([
                         'id' => $row['id']
                     ]);

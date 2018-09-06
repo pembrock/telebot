@@ -12,6 +12,7 @@ use Telebot\Lib\Bot\Main;
 use TelegramBot\Api\Client;
 use Telebot\Lib\Config\Config;
 use Telebot\Lib\Bot\Users;
+use Telebot\Lib\Bot\Common;
 
 if (!isset($argv[1])) {
     die("No chat_id params");
@@ -20,7 +21,6 @@ if (!isset($argv[1])) {
 if (!isset($argv[2])) {
     die("No method params");
 }
-
 $chatId = $argv[1];
 //$chatId = "-1001192747562";
 $testChatId = "-1001136482619";
@@ -40,10 +40,14 @@ if ($argv[2] == 'checkbirthday') {
     }
 }
 
-if ($argv[2] == 'checkusersstatus') {
+if ($argv[2] == 'updatestatus') {
     $users = new Users();
     $result = $users->updateUsersStatus($chatId, $bot);
     if ($result !== false && !empty($result)) {
-        $bot->sendMessage($testChatId, $result, 'html', true);
+        $bot->sendMessage($chatId, "Нас покинули:\n{$result}", 'html', true);
     }
+}
+
+if ($argv[2] == 'checkday') {
+    $bot->sendMessage($chatId, Common::checkDay(), 'html', true);
 }

@@ -364,10 +364,11 @@ class Main extends Bot
         } else {
             $row = $query->fetch(PDO::FETCH_ASSOC);
             if (isset($userLasttName)) {
-                $stmt = $this->db->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name WHERE id = :id");
+                $stmt = $this->db->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name, is_deleted = :is_deleted WHERE id = :id");
                 $stmt->execute([
                    'first_name' => $userFirstName,
                    'last_name'  => $userLasttName,
+                   'is_deleted'  => 0,
                    'id' =>  $row['id']
                 ]);
             }
